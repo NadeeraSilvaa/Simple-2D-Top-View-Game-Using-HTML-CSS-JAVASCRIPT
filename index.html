@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Forest</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #menu {
+            width: 20%;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 10px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+        }
+
+        #animalSection {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .menu-item {
+            width: calc(25% - 10px);
+            box-sizing: border-box;
+            cursor: pointer;
+            text-align: center;
+            position: relative;
+        }
+
+        .menu-item img {
+            width: 100%;
+            display: block;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .menu-item .name {
+            margin-top: 5px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .selected {
+            border: 3px solid red;
+            padding: 3px;
+            border-radius: 5px;
+        }
+
+        #sliderContainer {
+            width: 100%;
+        }
+
+        #sliderContainer label {
+            display: block;
+            margin-top: 10px;
+        }
+
+        #canvas-container {
+            flex: 1;
+            position: relative;
+        }
+
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="menu">
+        <!-- Animal Selection Section -->
+        <div id="animalSection">
+            <div class="menu-item" data-animal="Ponke"><img src="images/ponke.png" alt="ponke-Carnivore">
+                <div class="name">Ponke</div>
+            </div>
+            <div class="menu-item" data-animal="Popcat"><img src="images/popcat.png" alt="popcat-Carnivore">
+                <div class="name">Popcat</div>
+            </div>
+            <div class="menu-item" data-animal="Doge"><img src="images/doge.png" alt="doge-Carnivore">
+                <div class="name">Doge</div>
+            </div>
+            <div class="menu-item" data-animal="Duk"><img src="images/duk.png" alt="duk-Carnivore">
+                <div class="name">Duk</div>
+            </div>
+            <div class="menu-item" data-animal="Bobo"><img src="images/bobo.png" alt="bobo">
+                <div class="name">Bobo</div>
+            </div>
+            <div class="menu-item" data-animal="Goatseus"><img src="images/goatseus.png" alt="goatseus">
+                <div class="name">Goatseus</div>
+            </div>
+            <div class="menu-item" data-animal="Moodeng"><img src="images/moodeng.png" alt="moodeng">
+                <div class="name">Moodeng</div>
+            </div>
+            <div class="menu-item" data-animal="Pnut"><img src="images/pnut.png" alt="pnut">
+                <div class="name">Pnut</div>
+            </div>
+            <div class="menu-item" data-animal="Mumu"><img src="images/mumu.png" alt="mumu">
+                <div class="name">Mumu</div>
+            </div>
+            <div class="menu-item" data-animal="Pengu"><img src="images/pengu.png" alt="pengu">
+                <div class="name">Pengu</div>
+            </div>
+            <div class="menu-item" data-animal="Pepe"><img src="images/pepe.png" alt="pepe">
+                <div class="name">Pepe</div>
+            </div>
+            <div class="menu-item" data-animal="Trump"><img src="images/trump.png" alt="trump">
+                <div class="name">Trump</div>
+            </div>
+        </div>
+
+        <!-- Sliders Section -->
+        <div id="sliderContainer">
+            <h3>Animal Attributes</h3>
+            <label for="sizeSlider">Water Level</label>
+            <input id="sizeSlider" type="range" min="50" max="200" value="120" />
+            <label for="foodSlider">Food Level</label>
+            <input id="foodSlider" type="range" min="10" max="100" value="50">
+            <label for="fightSlider">Fight</label>
+            <input id="fightSlider" type="range" min="0" max="100" value="50">
+            <label for="speedSlider">Speed</label>
+            <input id="speedSlider" type="range" min="0" max="80" value="40">
+        </div>
+    </div>
+
+    <div id="canvas-container">
+        <canvas id="forestCanvas"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('forestCanvas');
+        const ctx = canvas.getContext('2d');
+        const menuItems = document.querySelectorAll('.menu-item');
+        const animals = [];
+        const trees = [];
+        const borderObjects = [];
+        let selectedAnimal = null;
+
+
+
+
+
+        // Set canvas size
+        canvas.width = window.innerWidth * 0.8;
+        canvas.height = window.innerHeight;
+
+        // Load images
+        const grassImage = new Image();
+        grassImage.src = 'images/grass2.png'; // Grass background image
+
+        const treeImages = [
+            'images/trees/tree1.png',
+            'images/trees/tree2.png',
+            'images/trees/tree3.png',
+            'images/rocks/rock4.png',
+            'images/rocks/rock2.png',
+            'images/river.png'
+
+        ]; // Array of tree images
+
+        const borderImages = [
+            'images/rocks/rock1.png',
+            'images/rocks/tree1.png',
+
+
+            'images/rocks/rock4.png'
+        ]; // Border images (rocks)
+
+        const animalImages = {
+            Ponke: 'images/ponke.png',
+            Popcat: 'images/popcat.png',
+            Doge: 'images/doge.png',
+            Duk: 'images/duk.png',
+            Bobo: 'images/bobo.png',
+            Goatseus: 'images/goatseus.png',
+            Moodeng: 'images/moodeng.png',
+            Pnut: 'images/pnut.png',
+            Mumu: 'images/mumu.png',
+            Pengu: 'images/pengu.png',
+            Pepe: 'images/pepe.png',
+            Trump: 'images/trump.png',
+        };
+
+        // Select all menu items
+
+
+
+        // Add event listeners to each menu item
+        menuItems.forEach(item => {
+            item.addEventListener('click', () => {
+                // Set the selected animal
+                selectedAnimal = item.getAttribute('data-animal');
+
+                // Remove the "selected" class from all items
+                menuItems.forEach(i => i.classList.remove('selected'));
+
+                // Add the "selected" class to the clicked item
+                item.classList.add('selected');
+
+                // Optionally, you can log the selected animal for testing
+                console.log('Selected Animal:', selectedAnimal);
+            });
+        });
+
+        // Mouse click event to spawn the selected animal at the clicked point
+        canvas.addEventListener('click', (e) => {
+            if (selectedAnimal) {
+                const mouseX = e.offsetX;
+                const mouseY = e.offsetY;
+
+                // Create the selected animal at the clicked position
+                animals.push({
+                    type: 'animal',
+                    animalType: selectedAnimal,
+                    x: mouseX - 60,  // Adjust to center the animal at the click point
+                    y: mouseY - 60,
+                    width: 100,
+                    height: 120,
+                    dx: (Math.random() - 0.5) * 2,
+                    dy: (Math.random() - 0.5) * 2
+                });
+
+                selectedAnimal = null;  // Reset selection after spawning
+            }
+        });
+
+
+        function generateTrees() {
+            const maxAttempts = 50; // Maximum attempts to place a tree without overlap
+            for (let i = 0; i < 15; i++) {
+                let placed = false;
+                let attempts = 0;
+
+                while (!placed && attempts < maxAttempts) {
+                    attempts++;
+
+                    const treeImage = treeImages[Math.floor(Math.random() * treeImages.length)];
+                    const x = Math.random() * canvas.width;
+                    const y = Math.random() * canvas.height;
+                    const width = 200;
+                    const height = 200;
+
+                    // Check for overlap with existing trees
+                    const isOverlapping = trees.some(tree => {
+                        return (
+                            x < tree.x + tree.width &&
+                            x + width > tree.x &&
+                            y < tree.y + tree.height &&
+                            y + height > tree.y
+                        );
+                    });
+
+                    // If no overlap, add the tree to the list
+                    if (!isOverlapping) {
+                        trees.push({ type: 'tree', image: treeImage, x, y, width, height });
+                        placed = true;
+                    }
+                }
+
+                // Optional: Warn if a tree couldn't be placed after max attempts
+                if (!placed) {
+                    console.warn(`Tree ${i + 1} could not be placed after ${maxAttempts} attempts.`);
+                }
+            }
+        }
+
+
+        // Add border objects (rocks and trees around the canvas)
+        function generateBorder() {
+            // Top and bottom borders
+            for (let x = 0; x < canvas.width; x += 50) {
+                const borderImage = borderImages[Math.floor(Math.random() * borderImages.length)];
+                borderObjects.push({ type: 'border', image: borderImage, x: x, y: 0, width: 65, height: 65 });
+                borderObjects.push({ type: 'border', image: borderImage, x: x, y: canvas.height - 65, width: 65, height: 65 });
+            }
+            // Left and right borders
+            for (let y = 0; y < canvas.height; y += 50) {
+                const borderImage = borderImages[Math.floor(Math.random() * borderImages.length)];
+                borderObjects.push({ type: 'border', image: borderImage, x: 0, y: y, width: 65, height: 65 });
+                borderObjects.push({ type: 'border', image: borderImage, x: canvas.width - 65, y: y, width: 65, height: 65 });
+            }
+        }
+
+        // Draw the forest (grass, trees, animals, borders)
+        function drawForest() {
+            ctx.drawImage(grassImage, 0, 0, canvas.width, canvas.height);
+            [...trees, ...borderObjects, ...animals].sort((a, b) => a.y - b.y).forEach(obj => {
+                const img = new Image();
+                img.src = obj.image || animalImages[obj.animalType];
+                ctx.drawImage(img, obj.x, obj.y, obj.width, obj.height);
+            });
+        }
+
+        // Animal movement and interaction
+        function moveAnimals() {
+            const speedFactor = parseInt(document.getElementById('speedSlider').value) / 50;
+            animals.forEach(animal => {
+                animal.x += animal.dx * speedFactor;
+                animal.y += animal.dy * speedFactor;
+
+                if (animal.x <= 50 || animal.x >= canvas.width - 50 - animal.width) animal.dx = -animal.dx;
+                if (animal.y <= 50 || animal.y >= canvas.height - 50 - animal.height) animal.dy = -animal.dy;
+            });
+        }
+
+        // Slider handlers
+
+        function updateAnimalSizes() {
+            const waterLevel = parseInt(document.getElementById('sizeSlider').value);
+            const foodLevel = parseInt(document.getElementById('foodSlider').value);
+            const sizeFactor = (waterLevel + foodLevel) / 2 / 100; // Average of water and food levels
+
+            animals.forEach(animal => {
+                animal.width = 100 * sizeFactor; // Base width scaled
+                animal.height = 120 * sizeFactor; // Base height scaled
+            });
+        }
+
+
+        // Array to hold active flashes
+        const flashes = [];
+
+        // Function to update fight behavior
+        function updateFightBehavior() {
+            const fightLevel = parseInt(document.getElementById('fightSlider').value);
+
+            if (fightLevel > 50) {
+                // Carnivores actively hunt
+                animals.forEach((animal, index) => {
+                    if (['Ponke', 'Popcat', 'Doge', 'Duk'].includes(animal.animalType)) {
+                        // Find the closest prey
+                        let closestAnimal = null;
+                        let minDistance = Infinity;
+
+                        animals.forEach((other, idx) => {
+                            if (idx !== index && !['Ponke', 'Popcat', 'Doge', 'Duk'].includes(other.animalType)) {
+                                const distance = Math.sqrt(
+                                    Math.pow(animal.x - other.x, 2) +
+                                    Math.pow(animal.y - other.y, 2)
+                                );
+
+                                if (distance < minDistance) {
+                                    minDistance = distance;
+                                    closestAnimal = other;
+                                }
+                            }
+                        });
+
+                        // Move toward the closest prey
+                        if (closestAnimal && minDistance < 300) { // Larger threshold for detection
+                            const angle = Math.atan2(closestAnimal.y - animal.y, closestAnimal.x - animal.x);
+                            animal.dx = Math.cos(angle) * 3; // Adjust speed as needed
+                            animal.dy = Math.sin(angle) * 3;
+
+                            // Check collision
+                            if (minDistance < 30) { // Increased collision threshold
+                                const targetIndex = animals.findIndex(a => a === closestAnimal); // Ensure exact match
+                                if (targetIndex !== -1) {
+                                    // Add a flash effect
+                                    flashes.push({
+                                        x: closestAnimal.x,
+                                        y: closestAnimal.y,
+                                        size: 50,
+                                        duration: 15 // Frames to show flash
+                                    });
+
+                                    animals.splice(targetIndex, 1); // Remove prey
+                                }
+                            }
+                        }
+                    }
+                });
+            } else if (fightLevel <= 30) {
+                // Non-carnivores increase in size
+                animals.forEach(animal => {
+                    if (!['Ponke', 'Popcat', 'Doge', 'Duk'].includes(animal.animalType)) {
+                        animal.width = 140; // Increase size
+                        animal.height = 140;
+                    }
+                });
+            }
+        }
+
+        // Function to draw flashes
+        function drawFlashes() {
+            flashes.forEach((flash, index) => {
+                ctx.fillStyle = `rgba(255, 257, 0, ${flash.duration / 10})`; // Fade out effect
+                ctx.beginPath();
+                ctx.arc(flash.x, flash.y, flash.size, 0, 2 * Math.PI);
+                ctx.fill();
+                flash.duration--;
+
+                // Remove flash if duration is over
+                if (flash.duration <= 0) {
+                    flashes.splice(index, 1);
+                }
+            });
+        }
+
+
+        let animalsAdded = false;  // Track if animals have been added
+        let initialAnimalCount = 5; // Initial number of animals when slider is below 50
+
+        function updateSpeedBehavior() {
+            const speedLevel = parseInt(document.getElementById('speedSlider').value);
+
+            // Update animal speeds
+            animals.forEach(animal => {
+                animal.dx = ((Math.random() - 0.5) * 2) * (Math.abs(speedLevel) / 50);
+                animal.dy = ((Math.random() - 0.5) * 2) * (Math.abs(speedLevel) / 50);
+            });
+
+            if (speedLevel > 40 && !animalsAdded) {
+                // Add exactly 10 more animals only once when slider is increased above 50
+                for (let i = 0; i < 10; i++) {
+                    const randomAnimalType = Object.keys(animalImages)[Math.floor(Math.random() * Object.keys(animalImages).length)];
+                    animals.push({
+                        type: 'animal',
+                        animalType: randomAnimalType,
+                        x: Math.random() * (canvas.width - 100),
+                        y: Math.random() * (canvas.height - 100),
+                        width: 120,
+                        height: 120,
+                        dx: (Math.random() - 0.5) * 2,
+                        dy: (Math.random() - 0.5) * 2,
+                    });
+                }
+                animalsAdded = true;  // Mark that animals have been added
+            } else if (speedLevel <= 40) {
+                // If there are more than 5 animals, keep only 5 and do not randomize them
+                if (animals.length > initialAnimalCount) {
+                    animals.splice(initialAnimalCount); // Trim down to 5 animals
+                }
+
+                // Reset the added flag when slider goes below 50
+                animalsAdded = false;
+            }
+        }
+
+
+
+
+        // Slider event listeners
+        ['sizeSlider', 'foodSlider', 'fightSlider', 'speedSlider'].forEach(id =>
+            document.getElementById(id).addEventListener('input', () => {
+                updateAnimalSizes();
+                updateFightBehavior();
+                updateSpeedBehavior();
+            })
+        );
+
+        // Main game loop
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawForest();
+            moveAnimals();
+            updateFightBehavior();
+            requestAnimationFrame(animate);
+        }
+
+        // Call drawFlashes in your main draw loop
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawForest();
+            drawFlashes(); // Ensure flashes are drawn on top of everything
+            requestAnimationFrame(draw);
+        }
+
+        // Start the loop
+       
+
+        // Initialize game
+        grassImage.onload = () => { generateTrees(); generateBorder(); animate(); draw(); };
+    </script>
+</body>
+
+</html>
